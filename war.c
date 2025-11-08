@@ -1,98 +1,220 @@
-// ============================================================================
-//         PROJETO WAR ESTRUTURADO - DESAFIO DE CÓDIGO
-// ============================================================================
-//        
-// ============================================================================
-//
-// OBJETIVOS:
-// - Modularizar completamente o código em funções especializadas.
-// - Implementar um sistema de missões para um jogador.
-// - Criar uma função para verificar se a missão foi cumprida.
-// - Utilizar passagem por referência (ponteiros) para modificar dados e
-//   passagem por valor/referência constante (const) para apenas ler.
-// - Foco em: Design de software, modularização, const correctness, lógica de jogo.
-//
-// ============================================================================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-// Inclusão das bibliotecas padrão necessárias para entrada/saída, alocação de memória, manipulação de strings e tempo.
+#define MAX_COMP 20
 
-// --- Constantes Globais ---
-// Definem valores fixos para o número de territórios, missões e tamanho máximo de strings, facilitando a manutenção.
+// ===== STRUCT =====
+typedef struct {
+    char nome[30];
+    char tipo[20];
+    int prioridade;
+} Componente;
 
-// --- Estrutura de Dados ---
-// Define a estrutura para um território, contendo seu nome, a cor do exército que o domina e o número de tropas.
+// ===== PROTÓTIPOS =====
+void cadastrarComponentes(Componente comp[], int *total);
+void mostrarComponentes(Componente comp[], int total);
+void bubbleSortNome(Componente comp[], int total, int *comparacoes);
+void insertionSortTipo(Componente comp[], int total, int *comparacoes);
+void selectionSortPrioridade(Componente comp[], int total, int *comparacoes);
+int buscaBinariaPorNome(Componente comp[], int total, char nome[], int *comparacoes);
 
-// --- Protótipos das Funções ---
-// Declarações antecipadas de todas as funções que serão usadas no programa, organizadas por categoria.
-// Funções de setup e gerenciamento de memória:
-// Funções de interface com o usuário:
-// Funções de lógica principal do jogo:
-// Função utilitária:
-
-// --- Função Principal (main) ---
-// Função principal que orquestra o fluxo do jogo, chamando as outras funções em ordem.
+// ===== FUNÇÃO PRINCIPAL =====
 int main() {
-    // 1. Configuração Inicial (Setup):
-    // - Define o locale para português.
-    // - Inicializa a semente para geração de números aleatórios com base no tempo atual.
-    // - Aloca a memória para o mapa do mundo e verifica se a alocação foi bem-sucedida.
-    // - Preenche os territórios com seus dados iniciais (tropas, donos, etc.).
-    // - Define a cor do jogador e sorteia sua missão secreta.
+    Componente componentes[MAX_COMP];
+    int total = 0;
+    int opcao, comp = 0;
+    clock_t inicio, fim;
+    double tempo;
+    char nomeBusca[30];
 
-    // 2. Laço Principal do Jogo (Game Loop):
-    // - Roda em um loop 'do-while' que continua até o jogador sair (opção 0) ou vencer.
-    // - A cada iteração, exibe o mapa, a missão e o menu de ações.
-    // - Lê a escolha do jogador e usa um 'switch' para chamar a função apropriada:
-    //   - Opção 1: Inicia a fase de ataque.
-    //   - Opção 2: Verifica se a condição de vitória foi alcançada e informa o jogador.
-    //   - Opção 0: Encerra o jogo.
-    // - Pausa a execução para que o jogador possa ler os resultados antes da próxima rodada.
+    do {
+        printf("\n=== SISTEMA DE MONTAGEM DA TORRE DE FUGA ===\n");
+        printf("1. Cadastrar componentes\n");
+        printf("2. Ordenar por NOME (Bubble Sort)\n");
+        printf("3. Ordenar por TIPO (Insertion Sort)\n");
+        printf("4. Ordenar por PRIORIDADE (Selection Sort)\n");
+        printf("5. Busca binaria por nome (após ordenar por nome)\n");
+        printf("6. Mostrar todos os componentes\n");
+        printf("0. Sair\nEscolha: ");
+        scanf("%d", &opcao);
+        getchar();
 
-    // 3. Limpeza:
-    // - Ao final do jogo, libera a memória alocada para o mapa para evitar vazamentos de memória.
+        switch (opcao) {
+            case 1:
+                cadastrarComponentes(componentes, &total);
+                break;
+
+            case 2:
+                inicio = clock();
+                comp = 0;
+                bubbleSortNome(componentes, total, &comp);
+                fim = clock();
+                tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+                printf("Ordenacao concluida por NOME (%d comparacoes, %.6f s)\n", comp, tempo);
+                mostrarComponentes(componentes, total);
+                break;
+
+            case 3:
+                inicio = clock();
+                comp = 0;
+                insertionSortTipo(componentes, total, &comp);
+                fim = clock();
+                tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+                printf("Ordenacao concluida por TIPO (%d comparacoes, %.6f s)\n", comp, tempo);
+                mostrarComponentes(componentes, total);
+                break;
+
+            case 4:
+                inicio = clock();
+                comp = 0;
+                selectionSortPrioridade(componentes, total, &comp);
+                fim = clock();
+                tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+                printf("Ordenacao concluida por PRIORIDADE (%d comparacoes, %.6f s)\n", comp, tempo);
+                mostrarComponentes(componentes, total);
+                break;
+
+            case 5:
+                if (total == 0) {
+                    printf("Cadastre e ordene os componentes primeiro!\n");
+                    break;
+                }
+                printf("Nome do componente-chave: ");
+                fgets(nomeBusca, 30, stdin);
+                nomeBusca[strcspn(nomeBusca, "\n")] = '\0';
+                comp = 0;
+                inicio = clock();
+                int pos = buscaBinariaPorNome(componentes, total, nomeBusca, &comp);
+                fim = clock();
+                tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+
+                if (pos != -1)
+                    printf("Componente '%s' encontrado (comparacoes: %d, tempo: %.6f s)\n",
+                           componentes[pos].nome, comp, tempo);
+                else
+                    printf("Componente nao encontrado (%d comparacoes, %.6f s)\n", comp, tempo);
+                break;
+
+            case 6:
+                mostrarComponentes(componentes, total);
+                break;
+
+            case 0:
+                printf("Encerrando o sistema...\n");
+                break;
+
+            default:
+                printf("Opcao invalida!\n");
+        }
+
+    } while (opcao != 0);
 
     return 0;
 }
 
-// --- Implementação das Funções ---
+// ===== FUNÇÕES =====
 
-// alocarMapa():
-// Aloca dinamicamente a memória para o vetor de territórios usando calloc.
-// Retorna um ponteiro para a memória alocada ou NULL em caso de falha.
+// Cadastro dos componentes
+void cadastrarComponentes(Componente comp[], int *total) {
+    if (*total >= MAX_COMP) {
+        printf("Limite maximo atingido!\n");
+        return;
+    }
 
-// inicializarTerritorios():
-// Preenche os dados iniciais de cada território no mapa (nome, cor do exército, número de tropas).
-// Esta função modifica o mapa passado por referência (ponteiro).
+    int n;
+    printf("Quantos componentes deseja cadastrar (max %d)? ", MAX_COMP - *total);
+    scanf("%d", &n);
+    getchar();
 
-// liberarMemoria():
-// Libera a memória previamente alocada para o mapa usando free.
+    for (int i = 0; i < n && *total < MAX_COMP; i++) {
+        printf("\nNome: ");
+        fgets(comp[*total].nome, 30, stdin);
+        comp[*total].nome[strcspn(comp[*total].nome, "\n")] = '\0';
+        printf("Tipo: ");
+        fgets(comp[*total].tipo, 20, stdin);
+        comp[*total].tipo[strcspn(comp[*total].tipo, "\n")] = '\0';
+        printf("Prioridade (1 a 10): ");
+        scanf("%d", &comp[*total].prioridade);
+        getchar();
+        (*total)++;
+    }
 
-// exibirMenuPrincipal():
-// Imprime na tela o menu de ações disponíveis para o jogador.
+    printf("Componentes cadastrados com sucesso!\n");
+}
 
-// exibirMapa():
-// Mostra o estado atual de todos os territórios no mapa, formatado como uma tabela.
-// Usa 'const' para garantir que a função apenas leia os dados do mapa, sem modificá-los.
+// Exibe todos os componentes
+void mostrarComponentes(Componente comp[], int total) {
+    if (total == 0) {
+        printf("Nenhum componente cadastrado.\n");
+        return;
+    }
 
-// exibirMissao():
-// Exibe a descrição da missão atual do jogador com base no ID da missão sorteada.
+    printf("\n--- LISTA DE COMPONENTES ---\n");
+    for (int i = 0; i < total; i++) {
+        printf("%d) Nome: %-20s | Tipo: %-15s | Prioridade: %d\n",
+               i + 1, comp[i].nome, comp[i].tipo, comp[i].prioridade);
+    }
+}
 
-// faseDeAtaque():
-// Gerencia a interface para a ação de ataque, solicitando ao jogador os territórios de origem e destino.
-// Chama a função simularAtaque() para executar a lógica da batalha.
+// ===== ORDENACOES =====
 
-// simularAtaque():
-// Executa a lógica de uma batalha entre dois territórios.
-// Realiza validações, rola os dados, compara os resultados e atualiza o número de tropas.
-// Se um território for conquistado, atualiza seu dono e move uma tropa.
+// Bubble Sort (por nome)
+void bubbleSortNome(Componente comp[], int total, int *comparacoes) {
+    for (int i = 0; i < total - 1; i++) {
+        for (int j = 0; j < total - i - 1; j++) {
+            (*comparacoes)++;
+            if (strcmp(comp[j].nome, comp[j + 1].nome) > 0) {
+                Componente tmp = comp[j];
+                comp[j] = comp[j + 1];
+                comp[j + 1] = tmp;
+            }
+        }
+    }
+}
 
-// sortearMissao():
-// Sorteia e retorna um ID de missão aleatório para o jogador.
+// Insertion Sort (por tipo)
+void insertionSortTipo(Componente comp[], int total, int *comparacoes) {
+    for (int i = 1; i < total; i++) {
+        Componente chave = comp[i];
+        int j = i - 1;
+        while (j >= 0 && strcmp(comp[j].tipo, chave.tipo) > 0) {
+            (*comparacoes)++;
+            comp[j + 1] = comp[j];
+            j--;
+        }
+        comp[j + 1] = chave;
+    }
+}
 
-// verificarVitoria():
-// Verifica se o jogador cumpriu os requisitos de sua missão atual.
-// Implementa a lógica para cada tipo de missão (destruir um exército ou conquistar um número de territórios).
-// Retorna 1 (verdadeiro) se a missão foi cumprida, e 0 (falso) caso contrário.
+// Selection Sort (por prioridade)
+void selectionSortPrioridade(Componente comp[], int total, int *comparacoes) {
+    for (int i = 0; i < total - 1; i++) {
+        int min = i;
+        for (int j = i + 1; j < total; j++) {
+            (*comparacoes)++;
+            if (comp[j].prioridade < comp[min].prioridade)
+                min = j;
+        }
+        if (min != i) {
+            Componente tmp = comp[i];
+            comp[i] = comp[min];
+            comp[min] = tmp;
+        }
+    }
+}
 
-// limparBufferEntrada():
-// Função utilitária para limpar o buffer de entrada do teclado (stdin), evitando problemas com leituras consecutivas de scanf e getchar.
+// ===== BUSCA BINÁRIA =====
+int buscaBinariaPorNome(Componente comp[], int total, char nome[], int *comparacoes) {
+    int ini = 0, fim = total - 1;
+    while (ini <= fim) {
+        int meio = (ini + fim) / 2;
+        (*comparacoes)++;
+        int cmp = strcmp(comp[meio].nome, nome);
+        if (cmp == 0) return meio;
+        else if (cmp < 0) ini = meio + 1;
+        else fim = meio - 1;
+    }
+    return -1;
+}
